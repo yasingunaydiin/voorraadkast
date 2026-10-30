@@ -60,7 +60,10 @@ button { cursor: pointer; }
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%238b8f99' stroke-width='2'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='m11 11 3.5 3.5'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: 14px center; }
 #main { display: grid; gap: 28px; min-width: 0; }
-footer { color: var(--muted); font-size: 12px; max-width: 90ch; }
+footer { color: var(--muted); font-size: 12px; max-width: 90ch; display: grid; gap: 10px; }
+footer p { margin: 0; }
+.data-tools { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; font-size: 13px; }
+.mini:disabled { opacity: .4; cursor: not-allowed; }
 .notice { font-size: 14px; padding: 10px 14px; border-radius: 10px; background: var(--warn-soft); color: var(--ink); }
 
 /* Category tiles (also the category filter) */
@@ -215,6 +218,13 @@ footer { color: var(--muted); font-size: 12px; max-width: 90ch; }
       </div>
     </header>
     <div id="notice" class="notice" hidden></div>
+    <div id="importBar" class="examples" hidden>
+      <span id="importMsg"></span>
+      <span class="head-actions">
+        <button class="mini" type="button" id="importCancel">Cancel</button>
+        <button class="mini danger armed" type="button" id="importConfirm">Replace list</button>
+      </span>
+    </div>
     <div id="main">
       <section class="cats" id="cats" aria-label="Categories"></section>
       <div class="filter-note" id="filterNote" hidden></div>
@@ -245,7 +255,15 @@ footer { color: var(--muted); font-size: 12px; max-width: 90ch; }
       </div>
       <section class="lists" id="lists"><p class="empty">Loading supplies…</p></section>
     </div>
-    <footer>Green means stocked and in date. Amber means below target or expiring within 60 days. Red means expired. Expired water doesn't count toward the reserve. Data is saved in data.json next to server.py.</footer>
+    <footer>
+      <div class="data-tools">
+        <span id="storageNote">Your list is saved in data.json next to server.py.</span>
+        <button class="mini" type="button" id="exportBtn" disabled>Export list</button>
+        <button class="mini" type="button" id="importBtn" disabled>Import list</button>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+      </div>
+      <p>Green means stocked and in date. Amber means below target or expiring within 60 days. Red means expired. Expired water and food don't count toward the reserves.</p>
+    </footer>
   </div>
 </div>
 
@@ -321,7 +339,7 @@ let canWrite = false;
 let items = [];
 let category = null, view = "all", query = "";
 let editingId = null;
-let household = { people: 2, days: 3 };
+let household = { people: 1, days: 7 };
 
 async function call(method, path, body) {
   const res = await fetch(path, {
@@ -331,7 +349,9 @@ async function call(method, path, body) {
   if (!res.ok) throw new Error(method + " " + path + " failed: " + res.status);
   return res.status === 204 ? null : res.json();
 }
-const api = {
+// With server.py running, data lives in data.json. Without it (e.g. GitHub Pages),
+// the same calls go to this browser's localStorage instead.
+const serverApi = {
   list: () => call("GET", "/api/supplies"),
   create: body => call("POST", "/api/supplies", body),
   put: (id, body) => call("PUT", "/api/supplies/" + encodeURIComponent(id), body),
@@ -339,7 +359,41 @@ const api = {
   remove: id => call("DELETE", "/api/supplies/" + encodeURIComponent(id)),
   household: () => call("GET", "/api/household"),
   setHousehold: body => call("PUT", "/api/household", body),
+  dump: async () => ({ household: await serverApi.household(), supplies: Object.fromEntries((await serverApi.list()).map(({ id, ...v }) => [id, v])) }),
+  replace: data => call("PUT", "/api/all", data),
 };
+
+const LS_KEY = "voorraadkast";
+const EXAMPLES = [
+  { name: "Bottled water, 1.5 L", category: "Water", location: "Garage shelf", qty: 12, target: 16, unit: "L", expires: "2027-08-01", notes: "Rotate into the kitchen each spring." },
+  { name: "Canned beans", category: "Food", location: "Pantry, bottom shelf", qty: 6, target: 6, unit: "cans", kcal: 300, expires: "2026-12-10", notes: "" },
+  { name: "First aid kit", category: "First aid", location: "Hall closet", qty: 1, target: 1, unit: "pcs", expires: null, notes: "Check plasters and painkillers." },
+  { name: "AA batteries", category: "Power & light", location: "Kitchen drawer", qty: 4, target: 12, unit: "pcs", expires: "2030-03-01", notes: "For torches and the radio." },
+  { name: "Energy bars", category: "Food", location: "Go-bag", qty: 10, target: 10, unit: "pcs", kcal: 200, expires: "2026-09-15", notes: "" },
+  { name: "LED torch", category: "Power & light", location: "Hall closet", qty: 2, target: 2, unit: "pcs", expires: null, notes: "" },
+];
+let lsData = null;
+function lsLoad() {
+  if (lsData) return lsData;
+  try { const d = JSON.parse(localStorage.getItem(LS_KEY)); if (d && d.supplies) return (lsData = d); } catch (e) {}
+  return (lsData = { household: { people: 1, days: 7 }, supplies: Object.fromEntries(EXAMPLES.map((e, i) => ["ex-" + i, { ...e, example: true }])) });
+}
+function lsSave() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(lsData)); }
+  catch (e) { throw new Error("browser storage unavailable"); }
+}
+const browserApi = {
+  list: async () => Object.entries(lsLoad().supplies).map(([id, v]) => ({ ...v, id })),
+  create: async body => { const id = Math.random().toString(36).slice(2, 14); lsLoad().supplies[id] = body; lsSave(); return { ...body, id }; },
+  put: async (id, body) => { lsLoad().supplies[id] = body; lsSave(); },
+  patch: async (id, body) => { Object.assign(lsLoad().supplies[id], body); lsSave(); },
+  remove: async id => { delete lsLoad().supplies[id]; lsSave(); },
+  household: async () => lsLoad().household,
+  setHousehold: async body => { lsLoad().household = body; lsSave(); },
+  dump: async () => lsLoad(),
+  replace: async data => { lsData = data; lsSave(); },
+};
+let api = serverApi;
 async function reload() {
   items = await api.list();
   render();
@@ -674,22 +728,74 @@ function onHousehold() {
 $("hhPeople").addEventListener("input", onHousehold);
 $("hhDays").addEventListener("input", onHousehold);
 
+/* ---------- export / import ---------- */
+$("exportBtn").onclick = async () => {
+  try {
+    const data = await api.dump();
+    const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+    const a = Object.assign(document.createElement("a"), { href: url, download: `voorraadkast-${todayStr()}.json` });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (e) { showNotice("Couldn't export the list."); }
+};
+let pendingImport = null;
+$("importBtn").onclick = () => $("importFile").click();
+$("importFile").addEventListener("change", async e => {
+  const file = e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    if (!data || typeof data.supplies !== "object" || Array.isArray(data.supplies)) throw new Error("no supplies");
+    const h = data.household || {};
+    pendingImport = { household: { people: h.people || 1, days: h.days || 7 }, supplies: data.supplies };
+    const n = Object.keys(data.supplies).length;
+    $("importMsg").textContent = `Replace your current ${items.length} items with the ${n} items from ${file.name}?`;
+    $("importBar").hidden = false;
+  } catch (err) {
+    showNotice("That file isn't a Voorraadkast export. Choose a file made with Export, or a data.json from server.py.");
+  }
+});
+$("importCancel").onclick = () => { pendingImport = null; $("importBar").hidden = true; };
+$("importConfirm").onclick = async () => {
+  if (!pendingImport) return;
+  try {
+    await api.replace(pendingImport);
+    household = pendingImport.household;
+    $("hhPeople").value = household.people;
+    $("hhDays").value = household.days;
+    pendingImport = null; $("importBar").hidden = true; showNotice("");
+    await reload();
+  } catch (e) { showNotice("Couldn't import the list."); }
+};
+
 /* ---------- boot ---------- */
 render();
 (async () => {
   try {
+    await serverApi.household();
+  } catch (e) {
+    if (["localhost", "127.0.0.1"].includes(location.hostname)) {
+      $("lists").replaceChildren(Object.assign(el("div", "empty-card"), {
+        innerHTML: "<strong>Your supplies can't load</strong><span>Start the server with <code>python3 server.py</code> in the project folder, then reload this page.</span>"
+      }));
+      $("status").textContent = "Server not reachable";
+      return;
+    }
+    api = browserApi;
+    $("storageNote").textContent = "Your list is saved in this browser only, not online. Use Export now and then to keep a backup.";
+  }
+  try {
     const d = await api.household();
-    household = { people: d.people || 2, days: d.days || 3 };
+    household = { people: d.people || 1, days: d.days || 7 };
     $("hhPeople").value = household.people;
     $("hhDays").value = household.days;
     canWrite = true;
     $("addBtn").disabled = false;
+    $("exportBtn").disabled = $("importBtn").disabled = false;
     await reload();
   } catch (e) {
-    $("lists").replaceChildren(Object.assign(el("div", "empty-card"), {
-      innerHTML: "<strong>Your supplies can't load</strong><span>Start the server with <code>python3 server.py</code> in the emergency-kit folder, then reload this page.</span>"
-    }));
-    $("status").textContent = "Server not reachable";
+    showNotice("This browser blocks saving data, so changes won't be kept.");
   }
 })();
 </script>

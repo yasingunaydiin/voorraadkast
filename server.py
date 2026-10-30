@@ -113,7 +113,13 @@ class Handler(BaseHTTPRequestHandler):
         with lock:
             data = load()
             if self.path == "/api/household":
-                data["household"] = {"people": int(body.get("people", 2)), "days": int(body.get("days", 3))}
+                data["household"] = {"people": int(body.get("people", 1)), "days": int(body.get("days", 7))}
+            elif self.path == "/api/all":
+                if not isinstance(body.get("supplies"), dict):
+                    return self.send_json(400, {"error": "supplies must be an object"})
+                hh = body.get("household") or {}
+                data = {"household": {"people": int(hh.get("people", 1)), "days": int(hh.get("days", 7))},
+                        "supplies": body["supplies"]}
             else:
                 sid = self.supply_id()
                 if not sid:
