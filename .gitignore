@@ -1,0 +1,5 @@
+# Your own supplies list stays on your computer
+data.json
+data.json.tmp
+__pycache__/
+.DS_Store
