@@ -1,3 +1,5 @@
+<img width="128px" align="left" alt="Voorraadkast logo" src="logo.svg" />
+
 # Voorraadkast
 
 A small local web app for keeping track of home emergency supplies: what you have, what's still to buy, where it's stored and when it expires.
