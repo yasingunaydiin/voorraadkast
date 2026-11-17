@@ -73,7 +73,15 @@ class Handler(BaseHTTPRequestHandler):
         return self.path[len(prefix):] if self.path.startswith(prefix) else None
 
     def do_GET(self):
-        if self.path in ("/", "/index.html"):
+        if self.path in ("/emergency", "/emergency.html"):
+            with open(os.path.join(os.path.dirname(INDEX_FILE), "emergency.html"), "rb") as f:
+                page = f.read()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(page)))
+            self.end_headers()
+            self.wfile.write(page)
+        elif self.path in ("/", "/index.html"):
             with open(INDEX_FILE, "rb") as f:
                 page = f.read()
             self.send_response(200)

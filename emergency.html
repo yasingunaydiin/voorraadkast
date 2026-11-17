@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Blackout &amp; no water: what to do</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 26 26%27%3E%3Crect x=%270.5%27 y=%270.5%27 width=%2725%27 height=%2725%27 rx=%277%27 fill=%27%23ffffff%27 stroke=%27%23d4d4da%27 stroke-width=%270.6%27/%3E%3Cpath d=%27M13 7v12M7 13h12%27 stroke=%27%23df433d%27 stroke-width=%272.6%27 stroke-linecap=%27round%27/%3E%3C/svg%3E">
+<style>
+/* Self-contained on purpose: no fonts, scripts or files to load, so it opens even when the internet is down.
+   Save it to your phone or print it. */
+:root {
+  --bg: #f6f6f7; --surface: #ffffff; --raised: #efeff1; --ink: #0d0e11; --muted: #5d616a; --line: #e0e0e5;
+  --ok: #0a9558; --ok-soft: #e2f4ea; --warn: #9a6416; --warn-soft: #fbf0dc; --bad: #c8322c; --bad-soft: #fce9e8;
+  --power: #b7791f; --water: #2563eb; --focus: #3a66ff;
+  --f: "Geist", "SF Pro Text", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #050506; --surface: #101113; --raised: #1a1b1e; --ink: #f3f3f5; --muted: #9a9ea8; --line: #26272b;
+    --ok: #2fd08a; --ok-soft: #0e2a1d; --warn: #f0b44c; --warn-soft: #2e2410; --bad: #ff6a62; --bad-soft: #301615;
+    --power: #f0b44c; --water: #7aa5ff; --focus: #7b9bff; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 var(--f); -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.wrap { max-width: 860px; margin: 0 auto; padding: 24px 16px 80px; }
+
+header h1 { font-size: clamp(28px, 6vw, 40px); line-height: 1.1; letter-spacing: -0.035em; margin: 8px 0 10px; text-wrap: balance; }
+header p { color: var(--muted); margin: 0 0 8px; max-width: 62ch; }
+.back { font-size: 14px; color: var(--muted); }
+
+/* Sticky switcher between the two scenarios and the extras */
+.bar { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(8px);
+  display: flex; gap: 8px; padding: 12px 0; margin-top: 16px; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
+.bar a { text-decoration: none; font-weight: 600; font-size: 14px; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 14px; }
+.bar a:hover { border-color: var(--muted); }
+
+.rules { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; margin: 20px 0; }
+.rules h2 { margin: 0 0 8px; font-size: 16px; }
+.rules ul { margin: 0; padding-left: 20px; }
+.rules li { margin: 4px 0; }
+
+h2.part { font-size: clamp(22px, 4.5vw, 28px); letter-spacing: -0.03em; margin: 44px 0 4px; display: flex; align-items: center; gap: 10px; }
+h2.part::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--c); flex: none; }
+.power { --c: var(--power); } .water { --c: var(--water); }
+.lead { color: var(--muted); margin: 0 0 16px; max-width: 64ch; }
+
+/* One card per time window */
+.step { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--c); border-radius: 14px; padding: 16px 18px; margin: 12px 0; }
+.step h3 { margin: 0 0 8px; font-size: 18px; letter-spacing: -0.02em; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.step h3 small { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.step ul { list-style: none; margin: 0; padding: 0; }
+.step li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); }
+.step li:first-child { border-top: 0; }
+.step input[type=checkbox] { width: 18px; height: 18px; margin: 3px 0 0; accent-color: var(--ink); }
+.step li.done span { color: var(--muted); text-decoration: line-through; }
+.step p { margin: 8px 0 0; }
+
+.tag { font: 600 11px/1.6 var(--f); border-radius: 999px; padding: 0 8px; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+.tag.no { background: var(--bad-soft); color: var(--bad); }
+.tag.buy { background: var(--warn-soft); color: var(--warn); }
+.tag.have { background: var(--ok-soft); color: var(--ok); }
+
+.note { border-radius: 12px; padding: 12px 14px; margin: 12px 0; font-size: 15px; }
+.note.bad { background: var(--bad-soft); } .note.warn { background: var(--warn-soft); } .note.ok { background: var(--ok-soft); }
+.note b:first-child { display: inline; }
+
+/* Numbers from the supply list */
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin: 12px 0; }
+.fact { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+.fact b { display: block; font-size: 22px; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.fact span { font-size: 13px; color: var(--muted); }
+
+table { width: 100%; border-collapse: collapse; font-size: 15px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+th, td { text-align: left; padding: 9px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+thead th { border-top: 0; background: var(--raised); font-size: 13px; }
+.tablewrap { overflow-x: auto; margin: 12px 0; }
+
+h2.plain { font-size: 22px; letter-spacing: -0.03em; margin: 44px 0 10px; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.box { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+.box h3 { margin: 0 0 6px; font-size: 16px; }
+.box ul { margin: 0; padding-left: 20px; }
+.box li { margin: 3px 0; }
+footer { margin-top: 40px; color: var(--muted); font-size: 13px; display: grid; gap: 8px; }
+footer p { margin: 0; }
+button.reset { border: 1px solid var(--line); background: none; border-radius: 999px; padding: 4px 12px; font: inherit; font-size: 13px; cursor: pointer; justify-self: start; color: var(--ink); }
+
+@media print {
+  :root { --bg: #fff; --surface: #fff; --raised: #f2f2f2; --ink: #000; --muted: #444; --line: #bbb;
+    --ok: #0a6b41; --ok-soft: #fff; --warn: #8a5a10; --warn-soft: #fff; --bad: #b3261e; --bad-soft: #fff;
+    --power: #8a5a10; --water: #1d4ed8; color-scheme: light; }
+  .bar, button.reset, .back { display: none; }
+  .note { border: 1px solid #999; }
+  .step { break-inside: avoid; }
+  body { background: #fff; color: #000; font-size: 11pt; }
+  .step, .box, .fact, .rules, table { break-inside: avoid; border-color: #bbb; }
+  .wrap { padding: 0; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <a class="back" href="./">← Back to Voorraadkast</a>
+  <h1>The power is out. What now?</h1>
+  <p>A plan for a blackout, and for what to do if the water stops soon after. It is written around your own supplies: 1 person, 1 cat, 7-day target, from your list as it stood on 15 November 2026.</p>
+  <p>Tick things off as you go. Your ticks stay on this device.</p>
+</header>
+
+<nav class="bar" aria-label="Sections">
+  <a href="#power">Power out</a>
+  <a href="#water">Water out</a>
+  <a href="#numbers">Your numbers</a>
+</nav>
+
+<section class="rules" aria-label="Rules that never change">
+  <h2>Five rules for the whole time</h2>
+  <ul>
+    <li><b>No fire or gas indoors without fresh air.</b> The camping stove, the gas lamp and the fire place give off carbon monoxide, which you can't smell. Fire place: outside only.</li>
+    <li><b>Candles never go unattended</b>, and never where the cat can knock them over. Use a jar or a holder.</li>
+    <li><b>Phone is for information, not for fun.</b> Low power mode, screen dim, no scrolling. Power banks are for NL-Alert, calls and messages.</li>
+    <li><b>Call 112 only for danger to life</b>, fire or injury. A blackout or no water on its own is not an emergency call.</li>
+    <li><b>Don't spend water you can't replace.</b> Drinking first, cooking second, everything else from the rainwater barrel.</li>
+  </ul>
+</section>
+
+<!-- ===================== POWER ===================== -->
+<h2 class="part power" id="power">1. No electricity</h2>
+<p class="lead">Most blackouts are over within hours. Plan as if it is a few hours, prepare as if it is days.</p>
+
+<div class="step power" data-s="p1">
+  <h3>First 15 minutes <small>Find out what kind of outage this is</small></h3>
+  <ul>
+    <li><input type="checkbox"><span><b>Stay calm and stay put.</b> Don't go outside in the dark to look around.</span></li>
+    <li><input type="checkbox"><span><b>Light:</b> use a candle or the phone torch for now.</span></li>
+    <li><input type="checkbox"><span><b>Unplug the expensive things</b> (computer, TV, oven, washing machine). Leave one lamp switched on so you see when power returns. The surge when it comes back can damage equipment.</span></li>
+    <li><input type="checkbox"><span><b>Don't open the fridge or freezer.</b> Closed, a fridge stays cold for about 4 hours and a full freezer for about 24 to 48 hours.</span></li>
+    <li><input type="checkbox"><span><b>Check your phone's battery</b> and switch on low power mode. Note the level.</span></li>
+  </ul>
+</div>
+
+<div class="step power" data-s="p2">
+  <h3>15 to 30 minutes <small>Get information</small></h3>
+  <ul>
+    <li><input type="checkbox"><span><b>Look up your grid operator's outage page</b> (Liander, Stedin or Enexis, depending on where you live). Mobile data often still works for a while. Don't phone them, the lines are for emergencies and everyone else will try the same.</span></li>
+    <li><input type="checkbox"><span><b>Listen for NL-Alert.</b> Make sure it is on in your phone settings.</span></li>
+    <li><input type="checkbox"><span><b>Radio:</b> iPhones have no FM radio, so a battery or crank radio is your only news source if mobile data also goes down. Until you have one, rely on NL-Alert and neighbours.</span></li>
+    <li><input type="checkbox"><span><b>Tell one person you're OK</b> with one short message, then stop. Every call and message loads the network.</span></li>
+    <li><input type="checkbox"><span><b>Put a drinking-water buffer in place now.</b> Even if the tap works, fill the two empty barrels from the tap and a few pans. Water often follows the power, and this costs nothing.</span></li>
+  </ul>
+  <div class="note warn"><b>This one matters most.</b> Tap water usually keeps flowing at first, but pumping stations and high-rise pumps need power. You have about 20 to 60 minutes of free chance to fill containers. Don't waste it.</div>
+</div>
+
+<div class="step power" data-s="p3">
+  <h3>30 to 60 minutes <small>Set up for the night</small></h3>
+  <ul>
+    <li><input type="checkbox"><span><b>Choose one room</b> to live in. It will be easier to keep warm and to light.</span></li>
+    <li><input type="checkbox"><span><b>Gather everything in that room:</b> candles, lighters, the gas lamp, the wool blanket, the phone and power banks, water, something to eat, a pen and paper.</span></li>
+    <li><input type="checkbox"><span><b>Warmth.</b> The central heating boiler needs electricity even when it runs on gas, so it will stop. Wear layers, hat and socks. You have a wool blanket.</span></li>
+    <li><input type="checkbox"><span><b>Cook only if you need to,</b> and only in a ventilated place with a window open. Peanut butter needs no cooking, no water and no fuel.</span></li>
+    <li><input type="checkbox"><span><b>Cat:</b> keep the cat inside, check it has water and food, and keep candles out of its reach.</span></li>
+    <li><input type="checkbox"><span><b>Carbon monoxide:</b> your smoke detector does not detect it, so keep a window open whenever gas or fire is in use.</span></li>
+  </ul>
+</div>
+
+<div class="step power" data-s="p4">
+  <h3>1 to 6 hours <small>Eat the fridge first</small></h3>
+  <ul>
+    <li><input type="checkbox"><span><b>Eat from the fridge first</b> (meat, fish, dairy, leftovers), when it passes about 4 hours without power. Then the freezer. Don't refreeze anything that fully thawed.</span></li>
+    <li><input type="checkbox"><span><b>Charge plan:</b> two power banks hold about 100 to 110 Wh, which is 7 to 8 phone charges. Charge the phone only when it drops below about 30 %.</span></li>
+    <li><input type="checkbox"><span><b>Solar panel:</b> put the 60 W panel in a window or outside in daylight. In November expect a fraction of 60 W, but it still adds a bit each day. Charge the power banks with it, not the phone directly.</span></li>
+    <li><input type="checkbox"><span><b>Check on neighbours</b>, especially anyone older or on medical equipment. Offer what you can: a charge, a candle, a hot drink.</span></li>
+    <li><input type="checkbox"><span><b>Go to bed on time.</b> Dark evenings are long. Sleeping saves light, power, food and your nerves.</span></li>
+  </ul>
+</div>
+
+<div class="step power" data-s="p5">
+  <h3>Day 1 to day 3 <small>Settle into a routine</small></h3>
+  <ul>
+    <li><input type="checkbox"><span><b>Daily rhythm:</b> check information (NL-Alert, radio) at fixed times, for example morning and evening, instead of all day.</span></li>
+    <li><input type="checkbox"><span><b>Light budget:</b> candles 40 pieces, about 160 to 240 hours if tealights. That is plenty for weeks of evenings if you burn one at a time.</span></li>
+    <li><input type="checkbox"><span><b>Cash:</b> you have €200 in small bills. Card terminals and ATMs go down too. Spend small bills on basics first.</span></li>
+    <li><input type="checkbox"><span><b>Write things down</b> (what you used, water level, gas left) so you can plan ahead instead of guessing.</span></li>
+    <li><input type="checkbox"><span><b>Check the gas for the stove.</b> Weigh or shake the canister. A small one burns roughly an hour in total, so plan on one hot meal a day at most.</span></li>
+    <li><input type="checkbox"><span><b>Go out for a short walk in daylight.</b> It helps mood and sleep, and you learn what's happening in the street.</span></li>
+  </ul>
+</div>
+
+<div class="step power" data-s="p6">
+  <h3>Week 1 <small>Make it last</small></h3>
+  <ul>
+    <li><input type="checkbox"><span><b>Eat until you feel full, and no more.</b> Rice and pasta cost gas and water; peanut butter costs neither. Mix them so gas lasts.</span></li>
+    <li><input type="checkbox"><span><b>Use the outdoor fire place for cooking</b> when dry and safe, to save the gas canister for emergencies. Keep distance from walls, fences and anything dry.</span></li>
+    <li><input type="checkbox"><span><b>Find where information is posted.</b> In long outages the municipality sets up information points. Ask neighbours, or watch for notices.</span></li>
+    <li><input type="checkbox"><span><b>Swap and share</b> with neighbours: skills, tools, a hot meal. You have a big peanut butter reserve. Others may have fuel, a car charger or a generator.</span></li>
+    <li><input type="checkbox"><span><b>Rest and read.</b> Books need no power. Keep the days structured to protect your mood.</span></li>
+  </ul>
+</div>
+
+<div class="step power" data-s="p7">
+  <h3>Week 2 and beyond <small>Think long term</small></h3>
+  <ul>
+    <li><input type="checkbox"><span><b>Keep an eye on the cat's food.</b> 15 kg lasts months for one cat, but wet food and water matter: keep it drinking.</span></li>
+    <li><input type="checkbox"><span><b>When power returns:</b> wait a few minutes before plugging things back in one by one. Throw out food that stood above 4 °C for more than 2 hours. Then restock and update your Voorraadkast list.</span></li>
+  </ul>
+</div>
+
+<!-- ===================== WATER ===================== -->
+<h2 class="part water" id="water">2. Then the water stops too</h2>
+<p class="lead">Start here the moment the tap sputters, runs brown or only dribbles. Without power, pumps stop and sewage pumps may as well.</p>
+
+<div class="note bad"><b>Do not drink from the tap when it comes back</b> until it is announced as safe, or boil it for at least 1 minute. After an outage the water can be contaminated.</div>
+
+<div class="step water" data-s="w1">
+  <h3>First 15 minutes <small>Catch what's left</small></h3>
+  <ul>
+    <li><input type="checkbox"><span><b>Fill everything now</b> while there is still any pressure: both empty barrels, pans, kettle, bottles, buckets, the sink. Even a trickle fills a bucket in an hour.</span></li>
+  </ul>
+</div>
+
+<div class="step water" data-s="w2">
+  <h3>15 to 30 minutes <small>Sort the water into three kinds</small></h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Water</th><th>Use for</th></tr></thead>
+    <tbody>
+      <tr><td><b>Drinking</b><br>Bottled water, plus clean barrels</td><td>Drinking, taking medicine, cat's bowl, brushing teeth. About 2 L a day for you.</td></tr>
+      <tr><td><b>Clean, not for drinking</b><br>Pans and containers filled from the tap before the stop</td><td>Cooking rice and pasta (boiled), dishes, washing hands and face.</td></tr>
+      <tr><td><b>Dirty</b><br>Rainwater barrel</td><td>Flushing the toilet and cleaning. Boil for at least 1 minute if you need it for cooking, and only as a last resort for drinking.</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li><input type="checkbox"><span><b>Label the containers</b> with a marker or tape: DRINK, CLEAN, DIRTY. Mistakes here make you ill.</span></li>
+    <li><input type="checkbox"><span><b>Other hidden water in the house:</b> a hot water tank or boiler holds roughly 80 to 150 L of drinkable water. Let it cool, then open its drain valve at the bottom. Toilet cisterns (the tank, not the bowl) hold 6 to 9 L. <b>Never drink radiator or central-heating water.</b></span></li>
+  </ul>
+</div>
+
+<div class="step water" data-s="w3">
+  <h3>30 to 60 minutes <small>Toilet and hygiene</small></h3>
+  <ul>
+    <li><input type="checkbox"><span><b>Toilet:</b> pour 2 to 3 L from the rainwater barrel into the bowl to flush. Use it only as needed.</span></li>
+    <li><input type="checkbox"><span><b>If the toilet stops working at all</b> (or you hear gurgling, which means the sewer is backing up): stop flushing. Line the bowl or a bucket with a bin bag, use it, tie it up, and keep it outside in a closed container.</span></li>
+    <li><input type="checkbox"><span><b>Hands:</b> wet wipes and wet toilet paper in place of washing. Wash hands after the toilet and before eating, with a little clean water and soap.</span></li>
+    <li><input type="checkbox"><span><b>Teeth:</b> brush with a little toothpaste and very little water. Spit, don't rinse a lot.</span></li>
+    <li><input type="checkbox"><span><b>Toilet paper</b> (24 rolls): fine for weeks. In a bucket toilet, bag it too.</span></li>
+  </ul>
+</div>
+
+<div class="step water" data-s="w4">
+  <h3>1 to 6 hours <small>Ration and plan</small></h3>
+  <ul>
+    <li><input type="checkbox"><span><b>Drink enough, don't ration thirst.</b> Cutting below about 1.5 L a day gets you sick. Cut washing and cooking water first.</span></li>
+    <li><input type="checkbox"><span><b>Cook with less water:</b> rice absorbs it all (about 2 parts water to 1 part rice), so none is wasted. Pasta: use just enough water to cover it, break it up, and keep the cooking water for soup. Less water also means less gas.</span></li>
+    <li><input type="checkbox"><span><b>No-water meals:</b> peanut butter (about 5,900 kcal per kg), jars of peas and carrots, which you can eat from the jar.</span></li>
+    <li><input type="checkbox"><span><b>Cat:</b> a cat needs roughly 200 to 300 ml of water a day, more on dry food. Keep its bowl full and fresh.</span></li>
+    <li><input type="checkbox"><span><b>Check for an announcement</b> (NL-Alert, your water company's page). Municipalities and water companies often set up emergency water points in longer outages.</span></li>
+  </ul>
+</div>
+
+<div class="step water" data-s="w5">
+  <h3>Day 1 to day 3 <small>Find more water</small></h3>
+  <ul>
+    <li><input type="checkbox"><span><b>Rain:</b> put out buckets and tarps. Rain from roofs is not drinkable raw, but good for washing and flushing, and with boiling for cooking.</span></li>
+    <li><input type="checkbox"><span><b>Making rainwater safe to drink:</b> strain it through a clean cloth, then bring it to a rolling boil for at least 1 minute and let it cool covered. Purification tablets or a filter make this easier and use no gas. Note that boiling doesn't remove chemicals such as roof coatings or fuel, so it is a last resort.</span></li>
+    <li><input type="checkbox"><span><b>Water points:</b> when announced, go with your barrels or bottles. A full 10 L barrel weighs 10 kg, so bring a trolley or a rucksack.</span></li>
+    <li><input type="checkbox"><span><b>Stay hydrated and watch for signs of dehydration:</b> dark urine, headaches, dizziness. They're early warnings to drink.</span></li>
+    <li><input type="checkbox"><span><b>Wash as little as you can,</b> in a bowl: face, armpits and groin first. Change underwear and socks.</span></li>
+    <li><input type="checkbox"><span><b>Painkillers:</b> you have 2 packs of paracetamol and 1 of ibuprofen. Take only with water and food as directed, and don't take both if you don't need to.</span></li>
+  </ul>
+</div>
+
+<div class="step water" data-s="w6">
+  <h3>Week 1 <small>Run it like a camp</small></h3>
+  <ul>
+    <li><input type="checkbox"><span><b>Keep a daily water log:</b> litres in, litres out. Adjust if you're losing more than 2 L a day total.</span></li>
+    <li><input type="checkbox"><span><b>Laundry:</b> don't wash clothes. Air them out and spot clean. Wear a clean layer next to the skin.</span></li>
+    <li><input type="checkbox"><span><b>Waste:</b> keep closed bags outside in a lidded bin so they don't attract rats or smell. Follow your municipality's advice on collection.</span></li>
+    <li><input type="checkbox"><span><b>Watch for illness.</b> Diarrhoea in a no-water situation is dangerous: keep drinking clean water with a pinch of salt and some sugar, and get medical help if it lasts more than 24 hours or you have a fever. Salt helps.</span></li>
+    <li><input type="checkbox"><span><b>Pool your resources</b> with neighbours: one fire, one boiling pot, and shared trips to the water point.</span></li>
+  </ul>
+</div>
+
+<div class="step water" data-s="w7">
+  <h3>Week 2 and beyond <small>Get water for the long run</small></h3>
+  <ul>
+    <li><input type="checkbox"><span><b>When the tap returns:</b> run the cold tap for a few minutes until it's clear, flush the toilets and run the hot tap too. Follow any boil-water notice for the exact length. Refill the barrels and bottles straight away.</span></li>
+    <li><input type="checkbox"><span><b>Replace what you used</b> and update the list in Voorraadkast. Throw away rainwater that has been standing for weeks.</span></li>
+  </ul>
+</div>
+
+<!-- ===================== NUMBERS ===================== -->
+<h2 class="plain" id="numbers">Your numbers</h2>
+<p class="lead">Calculated from your supplies list.</p>
+<div class="facts">
+  <div class="fact"><b>≈ 139,000 kcal</b><span>Food, of which peanut butter is 106,000</span></div>
+  <div class="fact"><b>100–110 Wh</b><span>Power banks: 7 to 8 phone charges, plus the 60 W panel in daylight</span></div>
+  <div class="fact"><b>160–240 h</b><span>Candle light (40 candles, if tealights)</span></div>
+  <div class="fact"><b>€200</b><span>Cash, small bills</span></div>
+  <div class="fact"><b>15 kg</b><span>Cat food (10 kg regular + 5 kg reserve)</span></div>
+</div>
+
+<footer>
+  <button class="reset" type="button" id="reset">Clear all ticks</button>
+</footer>
+</div>
+
+<script>
+// Remember ticks on this device. Fails quietly if storage is unavailable.
+(function () {
+  var KEY = "voorraadkast-emergency-ticks";
+  var boxes = Array.prototype.slice.call(document.querySelectorAll(".step input[type=checkbox]"));
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) {}
+  var counters = {};
+  boxes.forEach(function (box) {
+    var step = box.closest(".step").dataset.s;
+    counters[step] = (counters[step] || 0) + 1;
+    box.dataset.k = step + ":" + counters[step];
+    if (saved[box.dataset.k]) { box.checked = true; box.closest("li").classList.add("done"); }
+    box.addEventListener("change", function () {
+      box.closest("li").classList.toggle("done", box.checked);
+      if (box.checked) saved[box.dataset.k] = 1; else delete saved[box.dataset.k];
+      try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) {}
+    });
+  });
+  document.getElementById("reset").addEventListener("click", function () {
+    saved = {};
+    boxes.forEach(function (b) { b.checked = false; b.closest("li").classList.remove("done"); });
+    try { localStorage.removeItem(KEY); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>
